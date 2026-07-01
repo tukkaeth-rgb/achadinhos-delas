@@ -1,0 +1,8 @@
+work/downloaded-feeds/
+work/feed_urls.txt
+work/*.log
+work/feed-download-test.csv
+outputs/assets/products-ai/
+outputs/assets/products-ai*/
+outputs/assets/shopee-real/
+outputs/assets/shopee-real*/

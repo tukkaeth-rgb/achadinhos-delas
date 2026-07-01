@@ -1,0 +1,57 @@
+name: Atualizar Achadinhos Delas
+
+on:
+  schedule:
+    # 21:00 no horario de Brasilia/Sao Paulo (UTC-3).
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  update-site:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Atualizar produtos pelo feed Shopee
+        env:
+          SHOPEE_FEED_URLS: ${{ secrets.SHOPEE_FEED_URLS }}
+        run: python work/auto_update_site_from_feeds.py
+
+      - name: Commitar alteracoes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add outputs/achadinhos-delas.html outputs/publicar-achadinhos-delas/index.html
+          if git diff --cached --quiet; then
+            echo "Sem alteracoes para commitar."
+          else
+            git commit -m "Atualiza produtos Shopee"
+            git push
+          fi
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Preparar arquivos do site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: outputs/publicar-achadinhos-delas
+
+      - name: Publicar no GitHub Pages
+        uses: actions/deploy-pages@v4

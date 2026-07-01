@@ -1,0 +1,6 @@
+# Cole aqui os links de download CSV do Feed de Produto da Shopee, um por linha.
+# Exemplo:
+# https://affiliate.shopee.com.br/api/v1/datafeed/download?id=...
+#
+# Depois de preencher, salve este arquivo como:
+# C:\Users\wagne\Documents\Codex\2026-06-30\qy\work\feed_urls.txt

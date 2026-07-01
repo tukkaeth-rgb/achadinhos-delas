@@ -1,0 +1,36 @@
+ATUALIZACAO AUTOMATICA PELO GITHUB ACTIONS
+
+Arquivo criado:
+.github/workflows/update-achadinhos.yml
+
+Horario:
+Todo dia as 21:00 no horario de Brasilia/Sao Paulo.
+
+O que ele faz:
+1. Roda o script work/auto_update_site_from_feeds.py.
+2. Baixa os feeds da Shopee usando o segredo SHOPEE_FEED_URLS.
+3. Filtra somente produtos femininos dentro do padrao do site.
+4. Atualiza:
+   - outputs/achadinhos-delas.html
+   - outputs/publicar-achadinhos-delas/index.html
+5. Faz commit automatico se os arquivos mudarem.
+
+Como configurar no GitHub:
+1. Abra o repositorio no GitHub.
+2. Va em Settings.
+3. Va em Secrets and variables > Actions.
+4. Clique em New repository secret.
+5. Nome do segredo:
+   SHOPEE_FEED_URLS
+6. Valor:
+   Cole os links de download do Feed de Produto da Shopee, um por linha.
+
+Importante:
+Use os dois links do Feed de Produto:
+- Shopee Brasil - 2022
+- Shopee Oficial BR - 2022
+
+Se colocar apenas um link, o site atualiza, mas fica com menos produtos.
+
+Teste feito:
+O link de feed que voce enviou baixou CSV sem login, entao funciona para GitHub Actions.
