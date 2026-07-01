@@ -42,3 +42,20 @@ jobs:
             git commit -m "Atualiza produtos Shopee"
             git push
           fi
+
+      - name: Publicar branch gh-pages
+        shell: bash
+        run: |
+          git fetch origin gh-pages:gh-pages || git branch gh-pages
+          publish_dir="$(mktemp -d)"
+          git worktree add "$publish_dir" gh-pages
+          rsync -a --delete docs/ "$publish_dir/"
+          cd "$publish_dir"
+          touch .nojekyll
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Sem alteracoes para publicar."
+          else
+            git commit -m "Publica site atualizado"
+            git push origin gh-pages
+          fi
