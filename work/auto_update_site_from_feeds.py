@@ -288,6 +288,14 @@ def update_site(products: list[dict[str, str]]) -> None:
     PUBLISH_SITE.write_text(html, encoding="utf-8", newline="\n")
 
 
+def current_product_count() -> int:
+    if not SITE.exists():
+        return 0
+    html = SITE.read_text(encoding="utf-8", errors="ignore")
+    match = re.search(r'<div class="metric"><strong>(\d+)</strong><span>ofertas reais do feed Shopee</span></div>', html)
+    return int(match.group(1)) if match else 0
+
+
 def main() -> int:
     urls = feed_urls()
     try:
@@ -305,6 +313,14 @@ def main() -> int:
         log("Nenhum produto passou nos filtros.")
         print("Nenhum produto passou nos filtros.", file=sys.stderr)
         return 1
+
+    existing_count = current_product_count()
+    minimum_count = int(os.environ.get("MIN_SHOPEE_PRODUCTS", "800"))
+    if existing_count >= minimum_count and len(products) < minimum_count:
+        counts = {"mantido": existing_count, "novo_feed": len(products), "minimo": minimum_count}
+        log(f"Feed ignorado por baixo volume: {counts}")
+        print(json.dumps(counts, ensure_ascii=False, indent=2))
+        return 0
 
     update_site(products)
     counts = {
