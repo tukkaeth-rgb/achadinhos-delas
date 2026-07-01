@@ -49,7 +49,7 @@ jobs:
           git fetch origin gh-pages:gh-pages || git branch gh-pages
           publish_dir="$(mktemp -d)"
           git worktree add "$publish_dir" gh-pages
-          rsync -a --delete docs/ "$publish_dir/"
+          rsync -a --delete --exclude='.git' docs/ "$publish_dir/"
           cd "$publish_dir"
           touch .nojekyll
           git add -A
