@@ -438,6 +438,7 @@
       font-weight: 900;
       font-size: .82rem;
       white-space: nowrap;
+      font-variant-numeric: tabular-nums;
     }
 
     .count-pill {
@@ -1023,7 +1024,7 @@
         <strong>Atualização diária às 21h.</strong>
         <span>Novos achadinhos da Shopee entram na vitrine automaticamente.</span>
       </div>
-      <span class="update-badge">Volte amanhã</span>
+      <span class="update-badge" id="updateCountdown">Atualiza em --:--:--</span>
     </section>
 
     <section class="deal-rails" aria-label="Faixas de preço">
@@ -6557,6 +6558,21 @@
       document.querySelector("#achadinhos").scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
+    function updateCountdown() {
+      const badge = document.querySelector("#updateCountdown");
+      if (!badge) return;
+      const now = new Date();
+      const next = new Date(now);
+      next.setHours(21, 0, 0, 0);
+      if (now >= next) next.setDate(next.getDate() + 1);
+      const diff = Math.max(0, next - now);
+      const hours = Math.floor(diff / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      const pad = value => String(value).padStart(2, "0");
+      badge.textContent = `Atualiza em ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    }
+
 
 
     fallbackSearchForm.addEventListener("submit", event => {
@@ -6623,6 +6639,8 @@
     });
     syncQuickNav();
     render();
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
   </script>
 </body>
 </html>
