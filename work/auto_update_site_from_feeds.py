@@ -16,6 +16,7 @@ WORK = ROOT / "work"
 OUTPUTS = ROOT / "outputs"
 SITE = OUTPUTS / "achadinhos-delas.html"
 PUBLISH_SITE = OUTPUTS / "publicar-achadinhos-delas" / "index.html"
+DOCS_SITE = ROOT / "docs" / "index.html"
 DOWNLOADS = Path.home() / "Downloads"
 FEED_URLS = WORK / "feed_urls.txt"
 FEED_DIR = WORK / "downloaded-feeds"
@@ -286,6 +287,8 @@ def update_site(products: list[dict[str, str]]) -> None:
     SITE.write_text(html, encoding="utf-8", newline="\n")
     PUBLISH_SITE.parent.mkdir(parents=True, exist_ok=True)
     PUBLISH_SITE.write_text(html, encoding="utf-8", newline="\n")
+    DOCS_SITE.parent.mkdir(parents=True, exist_ok=True)
+    DOCS_SITE.write_text(html, encoding="utf-8", newline="\n")
 
 
 def current_product_count() -> int:
