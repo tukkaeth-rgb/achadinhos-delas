@@ -295,6 +295,13 @@ def current_product_count() -> int:
     if not SITE.exists():
         return 0
     html = SITE.read_text(encoding="utf-8", errors="ignore")
+    marker = "const products = "
+    try:
+        start = html.index(marker) + len(marker)
+        end = html.index("\n    const productList", start)
+        return len(json.loads(html[start:end].rstrip(";")))
+    except Exception:
+        pass
     match = re.search(r'<div class="metric"><strong>(\d+)</strong><span>ofertas reais do feed Shopee</span></div>', html)
     return int(match.group(1)) if match else 0
 
