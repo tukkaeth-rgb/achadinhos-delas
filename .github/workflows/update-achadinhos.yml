@@ -18,6 +18,9 @@ concurrency:
 jobs:
   update-site:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.publicar-pages.outputs.page_url }}
 
     steps:
       - name: Baixar repositorio
@@ -54,6 +57,7 @@ jobs:
           path: docs
 
       - name: Publicar GitHub Pages
+        id: publicar-pages
         uses: actions/deploy-pages@v5
         with:
           timeout: 1800000
