@@ -474,9 +474,15 @@ def main() -> int:
     products = merge_manual_products(products)
 
     existing_count = current_product_count()
-    minimum_count = int(os.environ.get("MIN_SHOPEE_PRODUCTS", "800"))
-    if existing_count >= minimum_count and len(products) < minimum_count:
-        counts = {"mantido": existing_count, "novo_feed": len(products), "minimo": minimum_count}
+    minimum_count = int(os.environ.get("MIN_SHOPEE_PRODUCTS", "500"))
+    minimum_ratio = float(os.environ.get("MIN_SHOPEE_PRODUCT_RATIO", "0.75"))
+    minimum_expected = max(minimum_count, int(existing_count * minimum_ratio)) if existing_count else minimum_count
+    if existing_count and len(products) < minimum_expected:
+        counts = {
+            "mantido": existing_count,
+            "novo_feed": len(products),
+            "minimo": minimum_expected,
+        }
         log(f"Feed ignorado por baixo volume: {counts}")
         print(json.dumps(counts, ensure_ascii=False, indent=2))
         return 0
