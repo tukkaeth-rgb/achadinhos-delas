@@ -21,6 +21,7 @@ DOWNLOADS = Path.home() / "Downloads"
 FEED_URLS = WORK / "feed_urls.txt"
 FEED_DIR = WORK / "downloaded-feeds"
 LOG = WORK / "auto-update.log"
+MANUAL_PRODUCTS = WORK / "manual_products.json"
 
 
 def norm(value: object) -> str:
@@ -306,6 +307,35 @@ def link_for(row: dict[str, str]) -> str:
     return str(row.get("product_link") or "").strip()
 
 
+def manual_products() -> list[dict[str, str]]:
+    if not MANUAL_PRODUCTS.exists():
+        return []
+    try:
+        data = json.loads(MANUAL_PRODUCTS.read_text(encoding="utf-8"))
+    except Exception as error:
+        log(f"Falha ao ler produtos manuais: {error}")
+        return []
+
+    required = {"name", "label", "category", "price", "desc", "budget", "image", "url"}
+    products: list[dict[str, str]] = []
+    for item in data:
+        if isinstance(item, dict) and required.issubset(item):
+            products.append({key: str(item[key]) for key in required})
+    return products
+
+
+def merge_manual_products(products: list[dict[str, str]]) -> list[dict[str, str]]:
+    manual = manual_products()
+    if not manual:
+        return products
+    seen_urls = {product["url"] for product in manual}
+    seen_names = {norm(product["name"]) for product in manual}
+    return manual + [
+        product for product in products
+        if product["url"] not in seen_urls and norm(product["name"]) not in seen_names
+    ]
+
+
 def desc_for(category: str, budget: str) -> str:
     if budget == "50":
         return {
@@ -440,6 +470,8 @@ def main() -> int:
         log("Nenhum produto passou nos filtros.")
         print("Nenhum produto passou nos filtros.", file=sys.stderr)
         return 1
+
+    products = merge_manual_products(products)
 
     existing_count = current_product_count()
     minimum_count = int(os.environ.get("MIN_SHOPEE_PRODUCTS", "800"))
