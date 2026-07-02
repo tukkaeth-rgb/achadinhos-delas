@@ -10,7 +10,7 @@ O site publicado fica em:
 
 ## Atualizacao automatica
 
-O workflow `.github/workflows/update-achadinhos.yml` roda todos os dias as 21h no horario de Brasilia/Sao Paulo.
+O workflow `.github/workflows/update-achadinhos.yml` roda todos os dias as 23h no horario de Brasilia/Sao Paulo.
 
 Ele usa o segredo `SHOPEE_FEED_URLS` para baixar os feeds CSV da Shopee, filtra os produtos e publica no GitHub Pages.
 

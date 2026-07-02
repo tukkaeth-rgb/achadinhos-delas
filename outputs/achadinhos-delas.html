@@ -938,7 +938,7 @@
 <body>
   <header>
     <div class="promo-strip">
-      <span class="promo-text">Novas ofertas da Shopee entram todos os dias às 21h</span>
+      <span class="promo-text">Novas ofertas da Shopee entram todos os dias às 23h</span>
       <span class="top-countdown" id="updateCountdown">Atualiza em --:--:--</span>
     </div>
     <div class="wrap nav">
@@ -14915,7 +14915,7 @@
       if (!badge) return;
       const now = new Date();
       const next = new Date(now);
-      next.setHours(21, 0, 0, 0);
+      next.setHours(23, 0, 0, 0);
       if (now >= next) next.setDate(next.getDate() + 1);
       const diff = Math.max(0, next - now);
       const hours = Math.floor(diff / 3600000);
@@ -14996,7 +14996,6 @@
   </script>
 </body>
 </html>
-
 
 
 
