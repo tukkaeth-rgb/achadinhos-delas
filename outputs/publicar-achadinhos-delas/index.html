@@ -321,6 +321,12 @@
       box-shadow: 0 14px 34px rgba(255, 231, 209, .22);
     }
 
+    .hero-button.instagram {
+      background: linear-gradient(135deg, #feda75 0%, #fa7e1e 25%, #d62976 55%, #962fbf 78%, #4f5bd5 100%);
+      color: #fff;
+      box-shadow: 0 16px 34px rgba(214, 41, 118, .28);
+    }
+
     main {
       padding: 28px 0 54px;
     }
@@ -808,6 +814,23 @@
       text-align: center;
     }
 
+    .footer-instagram {
+      width: fit-content;
+      margin: 12px auto 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--rose-dark);
+      font-weight: 900;
+      text-decoration: none;
+    }
+
+    .footer-instagram svg {
+      width: 20px;
+      height: 20px;
+      flex: 0 0 auto;
+    }
+
     .back-to-top {
       position: fixed;
       right: 18px;
@@ -990,6 +1013,7 @@
         <a class="hero-button" href="#achadinhos" data-jump-budget="10-20">R$10 a R$20</a>
         <a class="hero-button" href="#achadinhos" data-jump-budget="50">Até R$50</a>
         <a class="hero-button alt" href="#categorias">Categorias</a>
+        <a class="hero-button instagram" href="https://www.instagram.com/achadinhosdelastore/" target="_blank" rel="noopener">Receba novidades também no Instagram 💖</a>
       </div>
       <div class="hero-metrics" aria-label="Destaques">
         <div class="metric"><strong>Até R$10</strong><span>baratinhos para comprar no impulso certo</span></div>
@@ -1059,7 +1083,15 @@
 
   </main>
 
-  <footer>Achadinhos Delas - curadoria independente de achadinhos e promoções femininas na Shopee.</footer>
+  <footer>
+    Achadinhos Delas - curadoria independente de achadinhos e promoções femininas na Shopee.
+    <a class="footer-instagram" href="https://www.instagram.com/achadinhosdelastore/" target="_blank" rel="noopener" aria-label="Instagram Achadinhos Delas">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="currentColor" d="M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2Zm-.2 2A3.6 3.6 0 0 0 4 7.6v8.8A3.6 3.6 0 0 0 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6A3.6 3.6 0 0 0 16.4 4H7.6Zm9.65 1.55a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4ZM12 7.2a4.8 4.8 0 1 1 0 9.6 4.8 4.8 0 0 1 0-9.6Zm0 2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 0 0 0-5.6Z"/>
+      </svg>
+      Instagram
+    </a>
+  </footer>
 
   <button class="back-to-top" type="button" aria-label="Voltar ao topo">
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
