@@ -8,6 +8,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: atualizar-achadinhos
@@ -16,6 +18,9 @@ concurrency:
 jobs:
   update-site:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.publicar-pages.outputs.page_url }}
 
     steps:
       - name: Baixar repositorio
@@ -43,19 +48,14 @@ jobs:
             git push
           fi
 
-      - name: Publicar branch gh-pages
-        shell: bash
-        run: |
-          git fetch origin gh-pages:gh-pages || git branch gh-pages
-          publish_dir="$(mktemp -d)"
-          git worktree add "$publish_dir" gh-pages
-          rsync -a --delete --exclude='.git' docs/ "$publish_dir/"
-          cd "$publish_dir"
-          touch .nojekyll
-          git add -A
-          if git diff --cached --quiet; then
-            echo "Sem alteracoes para publicar."
-          else
-            git commit -m "Publica site atualizado"
-            git push origin gh-pages
-          fi
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Preparar artefato do site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Publicar GitHub Pages
+        id: publicar-pages
+        uses: actions/deploy-pages@v5
