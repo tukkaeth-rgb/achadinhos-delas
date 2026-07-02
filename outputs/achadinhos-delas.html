@@ -405,6 +405,7 @@
       justify-content: space-between;
       gap: 16px;
       margin: 26px 0 16px;
+      scroll-margin-top: 140px;
     }
 
     .section-head h2 {
@@ -7378,7 +7379,10 @@
     }
 
     function scrollToCatalog() {
-      document.querySelector("#achadinhos").scrollIntoView({ behavior: "smooth", block: "start" });
+      const target = document.querySelector("#achadinhos");
+      const headerHeight = document.querySelector("header")?.offsetHeight || 0;
+      const top = target.getBoundingClientRect().top + window.scrollY - headerHeight - 18;
+      window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
     }
 
     function updateCountdown() {
