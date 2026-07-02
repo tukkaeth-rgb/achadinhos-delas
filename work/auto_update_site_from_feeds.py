@@ -7,8 +7,9 @@ import re
 import sys
 import unicodedata
 import urllib.request
-from datetime import datetime
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,7 +22,14 @@ DOWNLOADS = Path.home() / "Downloads"
 FEED_URLS = WORK / "feed_urls.txt"
 FEED_DIR = WORK / "downloaded-feeds"
 LOG = WORK / "auto-update.log"
-MANUAL_PRODUCTS = WORK / "manual_products.json"
+PRODUCT_HISTORY = WORK / "products_history.json"
+try:
+    BR_TIMEZONE = ZoneInfo("America/Sao_Paulo")
+except ZoneInfoNotFoundError:
+    BR_TIMEZONE = timezone(timedelta(hours=-3))
+HISTORY_DAYS = int(os.environ.get("SHOPEE_HISTORY_DAYS", "3"))
+MAX_SITE_PRODUCTS = int(os.environ.get("MAX_SHOPEE_PRODUCTS", "2000"))
+SITE_PRODUCT_FIELDS = ("name", "label", "category", "price", "desc", "budget", "image", "url")
 
 
 def norm(value: object) -> str:
@@ -176,6 +184,99 @@ def log(message: str) -> None:
         handle.write(f"[{datetime.now():%Y-%m-%d %H:%M:%S}] {message}\n")
 
 
+def today_br() -> date:
+    return datetime.now(BR_TIMEZONE).date()
+
+
+def parse_date(value: object, fallback: date) -> date:
+    try:
+        return date.fromisoformat(str(value))
+    except (TypeError, ValueError):
+        return fallback
+
+
+def price_number(product: dict[str, str]) -> float:
+    return money(str(product.get("price", "")).replace("R$", "").replace(".", "").replace(",", ".")) or 999999
+
+
+def product_key(product: dict[str, str]) -> str:
+    source_key = str(product.get("_source_key") or "").strip()
+    if source_key:
+        return source_key
+    url = str(product.get("url") or "").strip()
+    if url:
+        return url
+    return "|".join([
+        norm(product.get("name", "")),
+        norm(product.get("category", "")),
+        str(product.get("budget", "")),
+    ])
+
+
+def site_product(product: dict[str, str]) -> dict[str, str]:
+    return {field: str(product[field]) for field in SITE_PRODUCT_FIELDS if field in product}
+
+
+def load_product_history() -> list[dict[str, str]]:
+    if not PRODUCT_HISTORY.exists():
+        return []
+    try:
+        data = json.loads(PRODUCT_HISTORY.read_text(encoding="utf-8"))
+    except Exception as error:
+        log(f"Falha ao ler historico de produtos: {error}")
+        return []
+    return [item for item in data if isinstance(item, dict)]
+
+
+def save_product_history(products: list[dict[str, str]]) -> None:
+    PRODUCT_HISTORY.write_text(
+        json.dumps(products, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+
+
+def merge_product_history(candidates: list[dict[str, str]]) -> list[dict[str, str]]:
+    today = today_br()
+    cutoff = today - timedelta(days=max(HISTORY_DAYS - 1, 0))
+
+    history_by_key: dict[str, dict[str, str]] = {}
+    for item in load_product_history():
+        key = str(item.get("_key") or product_key(item))
+        added_at = parse_date(item.get("added_at"), today)
+        if added_at >= cutoff:
+            item["_key"] = key
+            item["added_at"] = added_at.isoformat()
+            history_by_key[key] = item
+
+    for product in candidates:
+        key = product_key(product)
+        previous = history_by_key.get(key, {})
+        added_at = parse_date(previous.get("added_at"), today)
+        updated = {**site_product(product)}
+        updated["_key"] = key
+        updated["added_at"] = added_at.isoformat()
+        updated["last_seen_at"] = today.isoformat()
+        history_by_key[key] = updated
+
+    merged = [
+        item for item in history_by_key.values()
+        if parse_date(item.get("added_at"), today) >= cutoff
+    ]
+    merged.sort(key=lambda product: (
+        -parse_date(product.get("added_at"), today).toordinal(),
+        0 if product.get("budget") == "10" else 1 if product.get("budget") == "20" else 2,
+        CATEGORY_ORDER.get(str(product.get("category")), 99),
+        price_number(product),
+    ))
+
+    if MAX_SITE_PRODUCTS > 0:
+        merged = merged[:MAX_SITE_PRODUCTS]
+
+    save_product_history(merged)
+    return [site_product(product) for product in merged]
+
+
 def feed_urls() -> list[str]:
     env_urls = os.environ.get("SHOPEE_FEED_URLS", "")
     if env_urls.strip():
@@ -307,35 +408,6 @@ def link_for(row: dict[str, str]) -> str:
     return str(row.get("product_link") or "").strip()
 
 
-def manual_products() -> list[dict[str, str]]:
-    if not MANUAL_PRODUCTS.exists():
-        return []
-    try:
-        data = json.loads(MANUAL_PRODUCTS.read_text(encoding="utf-8"))
-    except Exception as error:
-        log(f"Falha ao ler produtos manuais: {error}")
-        return []
-
-    required = {"name", "label", "category", "price", "desc", "budget", "image", "url"}
-    products: list[dict[str, str]] = []
-    for item in data:
-        if isinstance(item, dict) and required.issubset(item):
-            products.append({key: str(item[key]) for key in required})
-    return products
-
-
-def merge_manual_products(products: list[dict[str, str]]) -> list[dict[str, str]]:
-    manual = manual_products()
-    if not manual:
-        return products
-    seen_urls = {product["url"] for product in manual}
-    seen_names = {norm(product["name"]) for product in manual}
-    return manual + [
-        product for product in products
-        if product["url"] not in seen_urls and norm(product["name"]) not in seen_names
-    ]
-
-
 def desc_for(category: str, budget: str) -> str:
     if budget == "50":
         return {
@@ -399,6 +471,7 @@ def build_products(feeds: list[Path]) -> list[dict[str, str]]:
                 seen_titles.add(title_key)
                 budget = "10" if price <= 10 else "20" if price <= 20 else "50"
                 products.append({
+                    "_source_key": f"{itemid}|{title_key}",
                     "name": title,
                     "label": "Até R$10" if budget == "10" else "R$10 a R$20" if budget == "20" else "Até R$50",
                     "category": category,
@@ -431,6 +504,12 @@ def update_site(products: list[dict[str, str]]) -> None:
         f'<div class="metric"><strong>{len(products)}</strong><span>ofertas reais do feed Shopee</span></div>',
         html,
     )
+    html = re.sub(
+        r'Novas ofertas da Shopee entram todos os dias (?:às|&agrave;s) 23h',
+        'Novas ofertas da Shopee entram todos os dias às 9h',
+        html,
+    )
+    html = html.replace("next.setHours(23, 0, 0, 0);", "next.setHours(9, 0, 0, 0);")
     SITE.write_text(html, encoding="utf-8", newline="\n")
     PUBLISH_SITE.parent.mkdir(parents=True, exist_ok=True)
     PUBLISH_SITE.write_text(html, encoding="utf-8", newline="\n")
@@ -471,7 +550,7 @@ def main() -> int:
         print("Nenhum produto passou nos filtros.", file=sys.stderr)
         return 1
 
-    products = merge_manual_products(products)
+    products = merge_product_history(products)
 
     existing_count = current_product_count()
     minimum_count = int(os.environ.get("MIN_SHOPEE_PRODUCTS", "500"))

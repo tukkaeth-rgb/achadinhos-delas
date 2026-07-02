@@ -2,8 +2,8 @@ name: Atualizar Achadinhos Delas
 
 on:
   schedule:
-    # 23:00 no horario de Brasilia/Sao Paulo (UTC-3).
-    - cron: "0 2 * * *"
+    # 09:00 no horario de Brasilia/Sao Paulo (UTC-3).
+    - cron: "0 12 * * *"
   workflow_dispatch:
 
 permissions:
@@ -35,7 +35,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add outputs/achadinhos-delas.html outputs/publicar-achadinhos-delas/index.html docs/index.html
+          git add outputs/achadinhos-delas.html outputs/publicar-achadinhos-delas/index.html docs/index.html work/products_history.json
           if git diff --cached --quiet; then
             echo "Sem alteracoes para commitar."
           else

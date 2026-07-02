@@ -982,7 +982,7 @@
 <body>
   <header>
     <div class="promo-strip">
-      <span class="promo-text">Novas ofertas da Shopee entram todos os dias às 23h</span>
+      <span class="promo-text">Novas ofertas da Shopee entram todos os dias às 9h</span>
       <span class="top-countdown" id="updateCountdown">Atualiza em --:--:--</span>
     </div>
     <div class="wrap nav">
@@ -1097,16 +1097,6 @@
 
   <script>
     const products = [
-      {
-            "name": "Cropped frente \u00fanica branco",
-            "price": "Ver pre\u00e7o",
-            "category": "roupas",
-            "url": "https://s.shopee.com.br/903HXDvGsl",
-            "budget": "50",
-            "image": "assets/manual/cropped-frente-unica-branco.png",
-            "label": "Oferta selecionada",
-            "desc": "Cropped feminino para compor looks de ver\u00e3o e sair bonito gastando pouco."
-      },
       {
             "name": "Lixa Bomerangue Meia Lua - Lixa Para Unhas de Acrigel Porcelana Fibra Manicures.",
             "label": "At\u00e9 R$10",
@@ -7390,7 +7380,7 @@
       if (!badge) return;
       const now = new Date();
       const next = new Date(now);
-      next.setHours(23, 0, 0, 0);
+      next.setHours(9, 0, 0, 0);
       if (now >= next) next.setDate(next.getDate() + 1);
       const diff = Math.max(0, next - now);
       const hours = Math.floor(diff / 3600000);
