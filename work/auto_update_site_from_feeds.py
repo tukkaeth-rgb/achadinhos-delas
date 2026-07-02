@@ -117,6 +117,57 @@ REMOVE_TERMS = [
 
 CATEGORY_ORDER = {"beleza": 0, "acessorios": 1, "bolsas": 2, "roupas": 3, "conforto": 4}
 
+EXTRA_BAD_TERMS = [
+    "adaptador", "adesivo parede", "agulha", "alicate universal", "antena",
+    "ar condicionado", "bandeja", "barbeador", "batedor", "bebedouro", "bico",
+    "bobina", "borracharia", "botao", "cabide", "caderno", "cadeado", "caixa",
+    "caneca", "carimbo escolar", "cartolina", "cartucho", "cha ", "chá ",
+    "chave", "clips", "clip de cabo", "clip magnetico", "coletor de cabelo",
+    "colher", "controle", "cortador", "desentupidor", "disjuntor", "dvd",
+    "embalagem", "envelope", "estojo escolar", "etiqueta", "faca", "fio",
+    "forminha", "grampeador", "grampo para cabo", "grampo de aco", "impressora",
+    "faber-castell", "fantasia", "halloween", "interruptor", "lampada",
+    "lanterna", "lapis de cor", "leao", "luminaria", "makita", "marcador",
+    "molde", "organizador de gaveta", "parafusadeira", "parafuso",
+    "pasta em l", "pasta oficio", "phillips", "pote", "prato", "refil",
+    "regua", "sanduba", "saco",
+    "sacola", "squeeze", "suporte", "tesoura escolar", "tomada", "usb",
+    "apple watch", "bts", "flanela magica", "porta malas", "p/vaso",
+    "fecho de metal", "tela malha", "homens", "unissex", "termica",
+    "térmica", "saude", "saúde", "expositor", "multilaser", "remedios",
+    "remédios",
+]
+
+CATEGORY_BLOCKERS = {
+    "beleza": [
+        "sabonete", "dental", "colgate", "shampoo", "condicionador",
+        "creme de pentear", "tratamento capilar", "vitamina", "d-pantenol",
+        "cleansing", "desodorante", "absorvente", "banila", "co clean",
+        "massageador", "touca descartavel", "protetor auricular",
+        "faber-castell", "phillips", "makita", "parafusadeira",
+        "organizador de cabos",
+    ],
+    "acessorios": [
+        "cabo", "clips", "clip", "aco", "aço", "magnetico", "magnético",
+        "parafuso", "chaveiro", "cabide", "grampo para", "suporte",
+        "organizadora", "organizadores",
+    ],
+    "bolsas": [
+        "saco", "sacola", "mochila infantil", "mochila escolar", "lancheira",
+        "organizador", "estojo escolar", "pasta", "p/vaso", "fecho de metal",
+        "tela malha", "espelho de bolsa", "pente", "termica", "térmica",
+        "saude", "saúde", "expositor", "multilaser",
+    ],
+    "roupas": [
+        "masculino", "infantil", "menino", "menina", "baby", "bebe",
+        "fantasia", "uniforme",
+    ],
+    "conforto": [
+        "erotico", "erótico", "sexy", "camisinha", "preservativo", "plug",
+        "vibrador", "absorvente", "infantil", "masculino",
+    ],
+}
+
 
 def log(message: str) -> None:
     WORK.mkdir(exist_ok=True)
@@ -168,18 +219,75 @@ def latest_downloaded_feeds() -> list[Path]:
     return paths
 
 
+def has_any(text: str, terms: list[str]) -> bool:
+    return any(norm(term) in text for term in terms)
+
+
 def classify(row: dict[str, str]) -> str | None:
-    text = norm(" ".join([
-        row.get("title", ""),
-        row.get("description", ""),
+    title = norm(row.get("title", ""))
+    desc = norm(row.get("description", ""))
+    feed_categories = norm(" ".join([
         row.get("global_category1", ""),
         row.get("global_category2", ""),
         row.get("global_category3", ""),
     ]))
-    for category in ["conforto", "bolsas", "acessorios", "roupas", "beleza"]:
-        if any(norm(term) in text for term in CAT_TERMS[category]):
+    full_text = " ".join([title, desc, feed_categories])
+
+    title_priority = [
+        ("bolsas", [
+            "bolsa feminina", "bolsas femininas", "bolsa pequena",
+            "bolsa transversal", "bolsa tiracolo", "bolsa de ombro",
+            "bolsa de axila", "mini bag", "carteira feminina",
+            "necessaire", "pochete feminina", "clutch",
+        ]),
+        ("roupas", ["vestido", "blusa", "cropped", "saia", "short feminino", "calca feminina", "regata", "camiseta feminina"]),
+        ("conforto", ["lingerie", "sutia", "calcinha", "pijama", "meia-calca", "meia calca", "cinta modeladora"]),
+        ("acessorios", ["brinco", "colar", "pulseira", "argola", "choker", "tornozeleira", "presilha", "piranha", "tiara"]),
+    ]
+    for category, terms in title_priority:
+        if has_any(full_text, CATEGORY_BLOCKERS.get(category, [])):
+            continue
+        if any(term in title for term in terms):
             return category
-    return None
+    if re.search(r"\banel\b|\baneis\b|\ban[eé]is\b", title) and not any(term in title for term in ["maquiagem", "unha", "sobrancelha"]):
+        return "acessorios"
+
+    scores: dict[str, int] = {}
+    for category, terms in CAT_TERMS.items():
+        if has_any(full_text, CATEGORY_BLOCKERS.get(category, [])):
+            continue
+
+        score = 0
+        normalized_terms = [norm(term) for term in terms]
+        score += sum(8 for term in normalized_terms if term in title)
+        score += sum(3 for term in normalized_terms if term in feed_categories)
+        score += sum(1 for term in normalized_terms if term in desc)
+
+        if category == "bolsas" and any(term in title for term in [
+            "bolsa feminina", "bolsas femininas", "bolsa pequena",
+            "bolsa transversal", "bolsa tiracolo", "bolsa de ombro",
+            "bolsa de axila", "mini bag", "carteira feminina",
+            "necessaire", "pochete feminina", "clutch",
+        ]):
+            score += 10
+        if category == "roupas" and any(term in title for term in ["feminina", "moda feminina", "vestido", "blusa", "cropped", "saia"]):
+            score += 3
+        if category == "acessorios" and any(term in title for term in ["brinco", "colar", "pulseira", "anel", "presilha", "tiara"]):
+            score += 7
+        if category == "beleza" and any(term in title for term in ["maquiagem", "gloss", "batom", "unha", "cilios", "sobrancelha"]):
+            score += 2
+
+        if score:
+            scores[category] = score
+
+    if not scores:
+        return None
+
+    category, score = sorted(
+        scores.items(),
+        key=lambda item: (-item[1], CATEGORY_ORDER[item[0]]),
+    )[0]
+    return category if score >= 8 else None
 
 
 def image_for(row: dict[str, str]) -> str:
@@ -219,11 +327,14 @@ def desc_for(category: str, budget: str) -> str:
 def build_products(feeds: list[Path]) -> list[dict[str, str]]:
     products: list[dict[str, str]] = []
     seen: set[str] = set()
+    seen_titles: set[str] = set()
     for feed in feeds:
         with feed.open("r", encoding="utf-8-sig", newline="") as handle:
             for row in csv.DictReader(handle):
                 price = money(row.get("sale_price")) or money(row.get("price"))
                 if price is None or price > 50:
+                    continue
+                if "\ufffd" in str(row.get("title") or ""):
                     continue
                 title = clean_title(row.get("title"))
                 if len(title) < 5:
@@ -237,6 +348,8 @@ def build_products(feeds: list[Path]) -> list[dict[str, str]]:
                 ]))
                 if any(norm(term) in text for term in BAD_TERMS):
                     continue
+                if any(norm(term) in text for term in EXTRA_BAD_TERMS):
+                    continue
                 if any(norm(term) in text for term in REMOVE_TERMS):
                     continue
                 category = classify(row)
@@ -249,7 +362,11 @@ def build_products(feeds: list[Path]) -> list[dict[str, str]]:
                 itemid = str(row.get("itemid") or title)
                 if itemid in seen:
                     continue
+                title_key = re.sub(r"[^a-z0-9]+", " ", norm(title)).strip()
+                if title_key in seen_titles:
+                    continue
                 seen.add(itemid)
+                seen_titles.add(title_key)
                 budget = "10" if price <= 10 else "20" if price <= 20 else "50"
                 products.append({
                     "name": title,
