@@ -832,6 +832,43 @@
       text-align: center;
     }
 
+    .back-to-top {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 30;
+      width: 48px;
+      height: 48px;
+      border: 0;
+      border-radius: 999px;
+      background: var(--rose);
+      color: white;
+      box-shadow: 0 16px 36px rgba(107,18,57,.28);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+      transition: opacity .2s ease, transform .2s ease, background .2s ease;
+    }
+
+    .back-to-top.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .back-to-top:hover {
+      background: var(--rose-dark);
+    }
+
+    .back-to-top svg {
+      width: 22px;
+      height: 22px;
+      stroke-width: 3;
+    }
+
     @media (max-width: 1280px) {
       .quick-nav { justify-content: center; }
       .nav-search { max-width: none; }
@@ -931,6 +968,12 @@
       .button { min-height: 42px; font-size: .84rem; }
       .visual-icon { width: 74px; height: 74px; }
       .visual-icon svg { width: 54px; height: 54px; }
+      .back-to-top {
+        right: 14px;
+        bottom: 14px;
+        width: 44px;
+        height: 44px;
+      }
       .note { font-size: .82rem; padding: 12px; }
     }
   </style>
@@ -1043,6 +1086,13 @@
   </main>
 
   <footer>Achadinhos Delas - curadoria independente de achadinhos e promoções femininas na Shopee.</footer>
+
+  <button class="back-to-top" type="button" aria-label="Voltar ao topo">
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 19V5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path>
+      <path d="M5 12l7-7 7 7" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path>
+    </svg>
+  </button>
 
   <script>
     const products = [
@@ -7147,6 +7197,7 @@
     const fallbackSearchForm = document.querySelector("#fallbackSearchForm");
     const fallbackSearchInput = document.querySelector("#fallbackSearchInput");
     const fallbackMaxPrice = document.querySelector("#fallbackMaxPrice");
+    const backToTopButton = document.querySelector(".back-to-top");
     let activeBudget = "10";
 
 
@@ -7409,6 +7460,17 @@
       event.preventDefault();
       window.location.href = link.href;
     });
+
+    if (backToTopButton) {
+      window.addEventListener("scroll", () => {
+        backToTopButton.classList.toggle("visible", window.scrollY > 420);
+      }, { passive: true });
+
+      backToTopButton.addEventListener("click", () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    }
+
     syncQuickNav();
     render();
     updateCountdown();
