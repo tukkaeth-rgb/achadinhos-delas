@@ -59,3 +59,5 @@ jobs:
       - name: Publicar GitHub Pages
         id: publicar-pages
         uses: actions/deploy-pages@v5
+        with:
+          timeout: 1800000
