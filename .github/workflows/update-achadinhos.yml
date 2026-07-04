@@ -2,8 +2,11 @@ name: Atualizar Achadinhos Delas
 
 on:
   schedule:
-    # 09:00 no horario de Brasilia/Sao Paulo (UTC-3).
-    - cron: "0 12 * * *"
+    # 09:07 no horario de Brasilia/Sao Paulo (UTC-3).
+    # Evita rodar exatamente no minuto 0 (topo da hora), horario mais
+    # congestionado nos runners do GitHub Actions, onde agendamentos
+    # costumam atrasar ou ser descartados.
+    - cron: "7 12 * * *"
   workflow_dispatch:
 
 permissions:
