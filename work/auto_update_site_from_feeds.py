@@ -23,6 +23,7 @@ FEED_URLS = WORK / "feed_urls.txt"
 FEED_DIR = WORK / "downloaded-feeds"
 LOG = WORK / "auto-update.log"
 PRODUCT_HISTORY = WORK / "products_history.json"
+LINK_OVERRIDES = WORK / "link_overrides.json"
 try:
     BR_TIMEZONE = ZoneInfo("America/Sao_Paulo")
 except ZoneInfoNotFoundError:
@@ -30,6 +31,23 @@ except ZoneInfoNotFoundError:
 HISTORY_DAYS = int(os.environ.get("SHOPEE_HISTORY_DAYS", "3"))
 MAX_SITE_PRODUCTS = int(os.environ.get("MAX_SHOPEE_PRODUCTS", "2000"))
 SITE_PRODUCT_FIELDS = ("name", "label", "category", "price", "desc", "budget", "image", "url")
+
+
+def load_link_overrides() -> dict[str, str]:
+    if not LINK_OVERRIDES.exists():
+        return {}
+    try:
+        data = json.loads(LINK_OVERRIDES.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {}
+    return {
+        str(key): str(value).strip()
+        for key, value in data.items()
+        if str(value).strip().startswith("http")
+    }
+
+
+LINK_OVERRIDE_MAP = load_link_overrides()
 
 
 def norm(value: object) -> str:
@@ -400,7 +418,21 @@ def image_for(row: dict[str, str]) -> str:
     return ""
 
 
+def product_key_from_link(value: object) -> str:
+    link = str(value or "")
+    match = re.search(r"/product/(\d+)/(\d+)", link)
+    if match:
+        return f"{match.group(1)}/{match.group(2)}"
+    match = re.search(r"/opaanlp/(\d+)/(\d+)", link)
+    if match:
+        return f"{match.group(1)}/{match.group(2)}"
+    return ""
+
+
 def link_for(row: dict[str, str]) -> str:
+    product_key = product_key_from_link(row.get("product_link"))
+    if product_key and product_key in LINK_OVERRIDE_MAP:
+        return LINK_OVERRIDE_MAP[product_key]
     for key in ["product_short link", "product_short_link", "offer_link", "link"]:
         value = str(row.get(key) or "").strip()
         if value.startswith("http"):
